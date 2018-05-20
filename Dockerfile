@@ -1,9 +1,24 @@
-FROM java:8
+FROM openjdk:8u171
 
-RUN apt-get update && apt-get upgrade -y && apt-get -y install apt-transport-https wget iproute2 ca-certificates && apt-get clean && \
-    echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823 && \
-    apt-get update && \
-    apt-get install sbt && \
-    sbt exit
+ENV SCALA_VERSION 2.12.6
+ENV SBT_VERSION 1.1.5
 
+# Scala expects this file
+RUN touch /usr/lib/jvm/java-8-openjdk-amd64/release
+
+RUN \
+  curl -fsL https://downloads.typesafe.com/scala/$SCALA_VERSION/scala-$SCALA_VERSION.tgz | tar xfz - -C /root/ && \
+  echo >> /root/.bashrc && \
+  echo "export PATH=~/scala-$SCALA_VERSION/bin:$PATH" >> /root/.bashrc
+
+RUN \
+  curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb && \
+  dpkg -i sbt-$SBT_VERSION.deb && \
+  rm sbt-$SBT_VERSION.deb && \
+  apt-get update && \
+  apt-get install sbt && \
+  sbt sbtVersion
+
+COPY . /app/
+
+WORKDIR /app
